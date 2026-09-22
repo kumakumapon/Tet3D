@@ -33,6 +33,7 @@ test("title, pair, keyboard, pause/resume and restart", async ({ page }) => {
     paused,
   );
   await page.locator("#resume").click();
+  await expect(page.locator(".arena")).toBeFocused();
   await page.keyboard.press("Space");
   await expect
     .poll(() => page.evaluate(() => window.__cascade.snapshot().placed))

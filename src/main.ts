@@ -13,7 +13,7 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>CUBE<span class="thin">CASCADE</span><small>3D COLOR CHAIN PUZZLE</small></span></a><span class="edition">TET3D / VOL. 01</span><button id="sound" aria-pressed="false">SOUND OFF</button></header>
 <main><section class="intro"><div><p class="eyebrow">SMALL CUBES. BIG CONNECTIONS.</p><h1>つなげて、崩して、<span>連鎖する。</span></h1></div><p class="rule">同じ色を <b>4個以上</b> つなげると消える。<br>左右・上下・前後、立体のつながりを見つけよう。</p></section>
-<div class="layout"><section class="arena" aria-label="ゲーム"><div class="arena-top"><span><i class="live-dot"></i>4 × 4 × 10</span><span id="status">READY TO CONNECT</span></div><div id="viewport"></div><div id="chain" role="status" aria-live="polite"></div><div id="overlay" class="overlay"></div><div class="arena-bottom"><span id="prediction">Ghost を見て、次の一手を。</span><span>+X → −Z ↑</span></div></section>
+<div class="layout"><section class="arena" aria-label="ゲーム" tabindex="0"><div class="arena-top"><span><i class="live-dot"></i>4 × 4 × 10</span><span id="status">READY TO CONNECT</span></div><div id="viewport"></div><div id="chain" role="status" aria-live="polite"></div><div id="overlay" class="overlay"></div><div class="arena-bottom"><span id="prediction">Ghost を見て、次の一手を。</span><span>+X → −Z ↑</span></div></section>
 <aside><section class="panel stats"><p class="eyebrow">YOUR RUN</p><label>SCORE<strong id="score">000000</strong></label><div class="stat-row"><label>BEST<b id="best">0</b></label><label>LEVEL<b id="level">01</b></label><label>CHAIN<b id="best-chain">0</b></label></div></section>
 <section class="panel"><p class="eyebrow">UP NEXT <span>2 PAIRS</span></p><div id="next" aria-label="次の2ペア"></div></section>
 <section class="panel"><p class="eyebrow">TOP VIEW <span>−Z / 奥</span></p><div id="map" aria-label="各列の最上部の色と高さ"></div><p class="caption">数字は列の高さ。＋Z は手前。</p></section>
@@ -23,6 +23,7 @@ app.innerHTML = `
 <section class="controls"><div><p class="eyebrow">MAKE YOUR MOVE</p><p><kbd>A D</kbd> 左右 <kbd>W S</kbd> 奥・手前 <kbd>Q E</kbd> 回転 <kbd>Shift</kbd> 早く落下 <kbd>Space</kbd> 配置 <kbd>Esc</kbd> 停止</p></div><div class="legend">${[1, 2, 3, 4].map((c) => `<span style="color:${COLORS[c]}">${SYMBOLS[c]} ${NAMES[c]}</span>`).join("")}</div></section>
 <section class="touch" aria-label="タッチ操作"><button data-action="back" aria-label="奥へ">↑ 奥</button><button data-action="left" aria-label="左へ">← 左</button><button data-action="front" aria-label="手前へ">↓ 手前</button><button data-action="right" aria-label="右へ">右 →</button><button data-action="ccw">↶ 回転</button><button data-action="cw">回転 ↷</button><button data-action="soft">↓ 落下</button><button data-action="hard" class="primary">配置</button></section>
 <footer>色をつなぐ。奥行きを読む。<span>CUBE CASCADE — v0.1</span></footer></main>`;
+document.querySelector(".arena")!.after(document.querySelector(".touch")!);
 const el = (id: string) => document.getElementById(id)!;
 const game = new GameEngine(),
   storage = new GameStorage(),
@@ -65,6 +66,7 @@ function start(tutorial: boolean) {
   last = performance.now();
   lessonView();
   draw();
+  document.querySelector<HTMLElement>(".arena")!.focus({ preventScroll: true });
 }
 function advance(action: string, success = true) {
   if (!success) return;
@@ -259,6 +261,12 @@ function draw() {
   ) {
     overlayKey = currentOverlay;
     el("overlay").hidden = !currentOverlay;
+    if (!currentOverlay) {
+      el("overlay").replaceChildren();
+      document
+        .querySelector<HTMLElement>(".arena")!
+        .focus({ preventScroll: true });
+    }
     if (currentOverlay) {
       el("overlay").innerHTML =
         s.status === "title"

@@ -8,7 +8,7 @@
 Node.js 22.12 以降で実行します。
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 

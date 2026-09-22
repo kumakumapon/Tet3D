@@ -640,3 +640,31 @@ footer {
     scroll-behavior: auto !important;
   }
 }
+
+/* Keep touch input adjacent to the board, before the supporting HUD on phones. */
+.layout > aside {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.layout > .touch {
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 0;
+  align-self: start;
+}
+@media (max-width: 600px) {
+  .layout > aside {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .layout > .touch {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .arena {
+    height: 400px;
+  }
+  .touch {
+    position: static;
+  }
+}
