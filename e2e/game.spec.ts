@@ -114,3 +114,13 @@ test("production has no debug API even with e2e query", async ({ page }) => {
   ).toBeVisible();
   expect(await page.evaluate(() => typeof window.__cascade)).toBe("undefined");
 });
+
+test("capture playable board", async ({ page }, testInfo) => {
+  await page.getByRole("button", { name: "PLAY →", exact: true }).click();
+  await page.evaluate(() => window.__cascade.fixture("3"));
+  await page.locator("#viewport canvas").waitFor();
+  await page.screenshot({
+    path: testInfo.outputPath("board.png"),
+    fullPage: true,
+  });
+});
