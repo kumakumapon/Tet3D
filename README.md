@@ -5,7 +5,9 @@
 
 ## 遊ぶ
 
-Node.js 22.12 以降で実行します。
+**▶ [ブラウザで遊ぶ（GitHub Pages）](https://kumakumapon.github.io/Tet3D/)** — WebGL 2対応ブラウザでそのまま開けます。
+
+ローカルで動かす場合は、Node.js 22.12 以降で実行します。
 
 ```sh
 npm ci
@@ -66,7 +68,7 @@ CIでも型検査・ESLint・Vitest・本番ビルド・Playwright（PCと320px�
 
 ### デプロイ
 
-`main` へのpushでQualityが成功すると、`.github/workflows/deploy.yml` がビルドして GitHub Pages（https://kumakumapon.github.io/Tet3D/ ）へ公開します。ActionsのDeploy to GitHub Pagesから手動でも実行できます。GitHub Pagesは `index.html` を `max-age=600` でキャッシュしますが、上の更新チェックにより新しい版へ切り替わります。
+`main` へのpushでQualityが成功すると、`.github/workflows/deploy.yml` がビルドして [GitHub Pages](https://kumakumapon.github.io/Tet3D/)へ公開します。ActionsのDeploy to GitHub Pagesから手動でも実行できます。GitHub Pagesは `index.html` を `max-age=600` でキャッシュしますが、上の更新チェックにより新しい版へ切り替わります。
 
 ### 更新とキャッシュ
 
