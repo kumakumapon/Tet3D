@@ -9,10 +9,17 @@ import {
   type Preset,
 } from "./renderer/renderer";
 import { GameStorage, Sound } from "./storage/storage";
+import {
+  UpdateWatcher,
+  claimAutoReload,
+  cleanUrl,
+  fetchLatest,
+  reloadUrl,
+} from "./update/update";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
 <header><a class="brand" href="./"><span class="brand-icon">◈</span><span>CUBE<span class="thin">CASCADE</span><small>3D COLOR CHAIN PUZZLE</small></span></a><span class="edition">TET3D / VOL. 01</span><button id="sound" aria-pressed="false">SOUND OFF</button></header>
-<main><section class="intro"><div><p class="eyebrow">SMALL CUBES. BIG CONNECTIONS.</p><h1>つなげて、崩して、<span>連鎖する。</span></h1></div><p class="rule">同じ色を <b>4個以上</b> つなげると消える。<br>左右・上下・前後、立体のつながりを見つけよう。</p></section>
+<main><section id="update" class="update" hidden role="status"><strong>UPDATE</strong><span>新しいバージョンがあります。</span><button id="update-reload" class="primary">更新する</button></section><section class="intro"><div><p class="eyebrow">SMALL CUBES. BIG CONNECTIONS.</p><h1>つなげて、崩して、<span>連鎖する。</span></h1></div><p class="rule">同じ色を <b>4個以上</b> つなげると消える。<br>左右・上下・前後、立体のつながりを見つけよう。</p></section>
 <div class="layout"><section class="arena" aria-label="ゲーム" tabindex="0"><div class="arena-top"><span><i class="live-dot"></i>4 × 4 × 10</span><span id="status">READY TO CONNECT</span></div><div id="viewport"></div><div id="chain" role="status" aria-live="polite"></div><div id="overlay" class="overlay"></div><div class="arena-bottom"><span id="prediction">Ghost を見て、次の一手を。</span><span>+X → −Z ↑</span></div></section>
 <aside><section class="panel stats"><p class="eyebrow">YOUR RUN</p><label>SCORE<strong id="score">000000</strong></label><div class="stat-row"><label>BEST<b id="best">0</b></label><label>LEVEL<b id="level">01</b></label><label>CHAIN<b id="best-chain">0</b></label></div></section>
 <section class="panel"><p class="eyebrow">UP NEXT <span>2 PAIRS</span></p><div id="next" aria-label="次の2ペア"></div></section>
@@ -22,7 +29,7 @@ app.innerHTML = `
 <section id="tutorial" class="tutorial" hidden aria-live="polite"></section>
 <section class="controls"><div><p class="eyebrow">MAKE YOUR MOVE</p><p><kbd>A D</kbd> 左右 <kbd>W S</kbd> 奥・手前 <kbd>Q E</kbd> 回転 <kbd>Shift</kbd> 早く落下 <kbd>Space</kbd> 配置 <kbd>Esc</kbd> 停止</p></div><div class="legend">${[1, 2, 3, 4].map((c) => `<span style="color:${COLORS[c]}">${SYMBOLS[c]} ${NAMES[c]}</span>`).join("")}</div></section>
 <section class="touch" aria-label="タッチ操作"><button data-action="back" aria-label="奥へ">↑ 奥</button><button data-action="left" aria-label="左へ">← 左</button><button data-action="front" aria-label="手前へ">↓ 手前</button><button data-action="right" aria-label="右へ">右 →</button><button data-action="ccw">↶ 回転</button><button data-action="cw">回転 ↷</button><button data-action="soft">↓ 落下</button><button data-action="hard" class="primary">配置</button></section>
-<footer>色をつなぐ。奥行きを読む。<span>CUBE CASCADE — v0.1</span></footer></main>`;
+<footer>色をつなぐ。奥行きを読む。<span title="${__BUILD_ID__}">CUBE CASCADE — v${__APP_VERSION__}</span></footer></main>`;
 document.querySelector(".arena")!.after(document.querySelector(".touch")!);
 const el = (id: string) => document.getElementById(id)!;
 const game = new GameEngine(),
@@ -320,6 +327,30 @@ function frame(time: number) {
   draw();
   renderer?.render(game.snapshot(), time, reduced.matches);
   requestAnimationFrame(frame);
+}
+// A stale index.html may be cached by the browser or a CDN; hashed assets are
+// safe. Poll version.json and move to the new build via a fresh URL.
+const cleaned = cleanUrl(location.href);
+if (cleaned) history.replaceState(history.state, "", cleaned);
+if (import.meta.env.PROD) {
+  let target = "";
+  const watcher = new UpdateWatcher(
+    __BUILD_ID__,
+    () => fetchLatest(`${import.meta.env.BASE_URL}version.json`),
+    (info) => {
+      target = reloadUrl(location.href, info.build);
+      // Reload silently only before a run starts; never interrupt play.
+      if (game.snapshot().status === "title" && claimAutoReload(info.build))
+        location.replace(target);
+      else el("update").hidden = false;
+    },
+  );
+  el("update-reload").onclick = () => location.replace(target);
+  void watcher.check();
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void watcher.check();
+  });
+  setInterval(() => void watcher.check(), 10 * 60 * 1000);
 }
 // Vite removes this import and the complete debug adapter from production bundles.
 if (

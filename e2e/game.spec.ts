@@ -116,6 +116,37 @@ test("production has no debug API even with e2e query", async ({ page }) => {
   expect(await page.evaluate(() => typeof window.__cascade)).toBe("undefined");
 });
 
+test("production reloads once into a newer deploy, then offers a button", async ({
+  page,
+}) => {
+  let requests = 0;
+  await page.route("**/version.json?*", (route) => {
+    requests++;
+    return route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ version: "9.9.9", build: "next-build" }),
+    });
+  });
+  await page.goto("http://127.0.0.1:4174/");
+  // The first detection navigates to ?v=next-build; the stale page served there
+  // still reports the old build, so the loop guard shows the banner instead.
+  // SwiftShader pages load slowly while other workers render.
+  await expect(page.locator("#update")).toBeVisible({ timeout: 20000 });
+  expect(requests).toBe(2);
+  expect(new URL(page.url()).searchParams.has("v")).toBe(false);
+  await expect(
+    page.getByRole("button", { name: "PLAY →", exact: true }),
+  ).toBeVisible();
+});
+
+test("production stays put when the deploy is current", async ({ page }) => {
+  const checked = page.waitForResponse((r) => r.url().includes("version.json"));
+  await page.goto("http://127.0.0.1:4174/");
+  await checked;
+  await expect(page.locator("#update")).toBeHidden();
+  expect(page.url()).toBe("http://127.0.0.1:4174/");
+});
+
 test("capture playable board", async ({ page }, testInfo) => {
   await page.getByRole("button", { name: "PLAY →", exact: true }).click();
   await page.evaluate(() => window.__cascade.fixture("3"));
