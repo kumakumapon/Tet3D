@@ -62,7 +62,11 @@ npm run test:e2e
 npm run format:check
 ```
 
-CIでも型検査・ESLint・Vitest・本番ビルド・Playwright（PCと320px幅）を実行します。`npm run preview` で本番成果物を確認できます。ビルドのbaseは相対パスなので、サブディレクトリへの静的配置も可能です。デプロイ自体はこのPRの対象外です。
+CIでも型検査・ESLint・Vitest・本番ビルド・Playwright（PCと320px幅）を実行します。`npm run preview` で本番成果物を確認できます。ビルドのbaseは相対パスなので、サブディレクトリへの静的配置も可能です。
+
+### デプロイ
+
+`main` へのpushでQualityが成功すると、`.github/workflows/deploy.yml` がビルドして GitHub Pages（https://kumakumapon.github.io/Tet3D/ ）へ公開します。ActionsのDeploy to GitHub Pagesから手動でも実行できます。GitHub Pagesは `index.html` を `max-age=600` でキャッシュしますが、上の更新チェックにより新しい版へ切り替わります。
 
 ### 更新とキャッシュ
 
