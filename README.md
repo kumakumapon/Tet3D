@@ -64,6 +64,17 @@ npm run format:check
 
 CIでも型検査・ESLint・Vitest・本番ビルド・Playwright（PCと320px幅）を実行します。`npm run preview` で本番成果物を確認できます。ビルドのbaseは相対パスなので、サブディレクトリへの静的配置も可能です。デプロイ自体はこのPRの対象外です。
 
+### 更新とキャッシュ
+
+JS・CSSはViteがファイル名にハッシュを付けるため、古いものは読み込まれません。キャッシュされやすいのは `index.html` だけなので、ビルドごとに一意のBuild IDを埋め込み、同じIDを `version.json` として出力しています。
+
+- 本番ビルドでは起動時、タブへ戻ったとき、10分ごとに `version.json` を `cache: "no-store"` で確認します。
+- IDが違えば、`?v=<新ID>` を付けたURLへ移動します。URLが変わるので、ブラウザやCDNのキャッシュを通らず新しい `index.html` が読み込まれます。移動後は `v` を消します。
+- 自動で再読み込みするのはタイトル画面だけで、1つのBuild IDにつき1回までです（sessionStorageで記録し、再読み込みのループを防ぎます）。プレイ中や、再読み込みしても古いページが返る場合は「更新する」ボタンを表示します。
+- フッターにバージョンを表示し、マウスを乗せるとBuild IDが出ます。
+
+配信側では `index.html` と `version.json` を `Cache-Control: no-cache`、`assets/*` を `max-age=31536000, immutable` にするのがおすすめです。ただし、この設定がなくても上の仕組みで更新されます。
+
 ### 構成
 
 - `src/game/board.ts`: Uint8Arrayの盤面、6方向BFS、列単位の重力
@@ -73,6 +84,7 @@ CIでも型検査・ESLint・Vitest・本番ビルド・Playwright（PCと320px�
 - `src/renderer/renderer.ts`: Three.js。固定InstancedMeshを更新し、毎フレームMeshを作り直さない
 - `src/main.ts`: DOM UI、入力、チュートリアル、アニメーションループ
 - `src/storage/storage.ts`: 保存失敗に耐えるBEST保存とWeb Audio
+- `src/update/update.ts`: `version.json` で新しいデプロイを検知し、キャッシュを通さず再読み込み
 
 Game CoreはDOM・Three.js非依存。Rendererは切り離されたSnapshotだけを読み、Boardへ書き込みません。Randomizerは乱数を注入可能です。
 
